@@ -69,5 +69,9 @@ https://github.com/zont/gulp-bower
 
 ### Changelog
 
+#### 0.1.1
+* fix bug where dep is not downloaded if files = []
+
 #### 0.1.0
 * initial release
+

@@ -32,7 +32,7 @@
     gutil.log("Bower: Using bower dir: ", dir);
     bowerspecs = [];
     process_deps = function(deps) {
-      var all_exist, file, file_list, name, spec, _i, _len, _ref;
+      var all_exist, file, file_list, moduledir, name, spec, _i, _len, _ref;
       if (deps == null) {
         return [];
       }
@@ -43,6 +43,10 @@
           spec.files = [spec.files];
         }
         all_exist = true;
+        moduledir = path.resolve(dir, name);
+        if (!fs.existsSync(moduledir)) {
+          all_exist = false;
+        }
         _ref = spec.files;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           file = _ref[_i];

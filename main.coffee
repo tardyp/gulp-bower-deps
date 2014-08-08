@@ -29,11 +29,17 @@ module.exports = (opts) ->
             if not Array.isArray(spec.files)
                 spec.files = [spec.files]
             all_exist = true
+
+            moduledir = path.resolve(dir, name)
+            unless fs.existsSync(moduledir)
+                all_exist = false
+
             for file in spec.files
                 file = path.resolve(dir, name, file)
                 file_list.push(file)
                 unless fs.existsSync(file)
                     all_exist = false
+
             unless all_exist
                 bowerspecs.push(name + "#" + spec.version)
         return file_list
