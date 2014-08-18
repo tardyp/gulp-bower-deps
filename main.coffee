@@ -4,6 +4,7 @@ gutil = require("gulp-util")
 through = require("through2")
 path = require('path')
 
+
 module.exports = (opts) ->
     opts = directory: opts    if typeof opts is "string"
     opts = opts or {}
@@ -37,10 +38,11 @@ module.exports = (opts) ->
             for file in spec.files
                 file = path.resolve(dir, name, file)
                 file_list.push(file)
+                console.log file
                 unless fs.existsSync(file)
                     all_exist = false
 
-            unless all_exist
+            unless all_exist and opts.fastcheck
                 bowerspecs.push(name + "#" + spec.version)
         return file_list
     deps = process_deps(opts.deps)

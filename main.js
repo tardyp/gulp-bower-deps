@@ -52,11 +52,12 @@
           file = _ref[_i];
           file = path.resolve(dir, name, file);
           file_list.push(file);
+          console.log(file);
           if (!fs.existsSync(file)) {
             all_exist = false;
           }
         }
-        if (!all_exist) {
+        if (!(all_exist && opts.fastcheck)) {
           bowerspecs.push(name + "#" + spec.version);
         }
       }
