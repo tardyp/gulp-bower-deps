@@ -1,4 +1,4 @@
-Q = require("Q")
+Q = require("q")
 Logger = require("bower-logger")
 Project = require("bower/lib/core/Project")
 Tracker = require("bower/lib/util/analytics").Tracker
