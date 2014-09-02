@@ -1,7 +1,15 @@
 (function() {
-  var bower, fs, gutil, path, through;
+  var Logger, Project, Q, Tracker, defaultConfig, fs, gutil, mout, path, through;
 
-  bower = require("bower");
+  Q = require("Q");
+
+  Logger = require("bower-logger");
+
+  Project = require("bower/lib/core/Project");
+
+  Tracker = require("bower/lib/util/analytics").Tracker;
+
+  defaultConfig = require('bower/lib/config');
 
   fs = require("fs");
 
@@ -11,8 +19,10 @@
 
   path = require('path');
 
+  mout = require('mout');
+
   module.exports = function(opts) {
-    var bower_config, bowerrc, bowerspecs, deps, dir, process_deps, testdeps;
+    var bower_config, bowerjson, bowerrc, deps, dir, process_deps, testdeps;
     if (typeof opts === "string") {
       opts = {
         directory: opts
@@ -30,7 +40,10 @@
     dir = opts.directory;
     gutil.log("Bower: Using cwd: ", opts.cwd || process.cwd());
     gutil.log("Bower: Using bower dir: ", dir);
-    bowerspecs = [];
+    bowerjson = {
+      name: 'foo',
+      dependencies: {}
+    };
     process_deps = function(deps) {
       var all_exist, file, file_list, moduledir, name, spec, _i, _len, _ref;
       if (deps == null) {
@@ -42,7 +55,6 @@
         if (!Array.isArray(spec.files)) {
           spec.files = [spec.files];
         }
-        all_exist = true;
         moduledir = path.resolve(dir, name);
         if (!fs.existsSync(moduledir)) {
           all_exist = false;
@@ -52,14 +64,8 @@
           file = _ref[_i];
           file = path.resolve(dir, name, file);
           file_list.push(file);
-          console.log(file);
-          if (!fs.existsSync(file)) {
-            all_exist = false;
-          }
         }
-        if (!(all_exist && opts.fastcheck)) {
-          bowerspecs.push(name + "#" + spec.version);
-        }
+        bowerjson.dependencies[name] = spec.version;
       }
       return file_list;
     };
@@ -74,26 +80,37 @@
           taskname = "bower";
         }
         gulp.task(taskname, [], function() {
-          var stream;
+          var config, decEndpoints, logger, options, project, stream, tracker;
           stream = through.obj(function(file, enc, callback) {
             this.push(file);
             callback();
           });
-          if (bowerspecs.length > 0) {
-            bower.commands.install(bowerspecs, {}, opts).on("log", function(result) {
-              gutil.log(["bower", gutil.colors.cyan(result.id), result.message].join(" "));
-            }).on("error", function(error) {
-              stream.emit("error", new gutil.PluginError("gulp-bower-deps", error));
-              stream.end();
-            }).on("end", function() {
-              stream.end();
-              stream.emit("end");
-            });
-          } else {
-            gutil.log("Bower: everything installed! nothing to do");
-            stream.end();
-            stream.emit("end");
+          logger = new Logger();
+          logger.on("log", function(log) {
+            return gutil.log(["Bower", gutil.colors.cyan(log.id), log.message].join(" "));
+          });
+          config = opts;
+          options = {};
+          config = mout.object.deepFillIn(config || {}, defaultConfig);
+          if (options.save == null) {
+            options.save = config.defaultSave;
           }
+          project = new Project(config, logger);
+          project._json = bowerjson;
+          project._jsonFile = "bower.json";
+          project.saveJson = function() {
+            return Q.resolve();
+          };
+          tracker = new Tracker(config);
+          decEndpoints = [];
+          tracker.trackDecomposedEndpoints('install', decEndpoints);
+          project.install(decEndpoints, options, config).then(function(res) {
+            stream.end();
+            return stream.emit("end");
+          }, function(error) {
+            stream.emit("error", new gutil.PluginError("gulp-bower-deps", error));
+            return stream.end();
+          });
           return stream;
         });
       },

@@ -69,6 +69,11 @@ https://github.com/zont/gulp-bower
 
 ### Changelog
 
+#### 0.2.0
+* Change installation method. We now fake a bower.json, instead of faking a bower install.
+  With this method, bower does all checks correctly, and dont fail to upgrade packages
+  Because this uses undocumented bower API, we fix the bower version in dependancies
+
 #### 0.1.1
 * fix bug where dep is not downloaded if files = []
 

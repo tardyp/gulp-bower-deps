@@ -1,8 +1,13 @@
-bower = require("bower")
+Q = require("Q")
+Logger = require("bower-logger")
+Project = require("bower/lib/core/Project")
+Tracker = require("bower/lib/util/analytics").Tracker
+defaultConfig = require('bower/lib/config');
 fs = require("fs")
 gutil = require("gulp-util")
 through = require("through2")
 path = require('path')
+mout = require('mout')
 
 
 module.exports = (opts) ->
@@ -20,7 +25,11 @@ module.exports = (opts) ->
     gutil.log "Bower: Using cwd: ", opts.cwd or process.cwd()
     gutil.log "Bower: Using bower dir: ", dir
 
-    bowerspecs = []
+    # generate bowerjson automatically
+    bowerjson = {
+        name: 'foo'
+        dependencies:{}
+    }
     process_deps = (deps) ->
         unless deps?
             return []
@@ -29,7 +38,6 @@ module.exports = (opts) ->
         for name, spec of deps
             if not Array.isArray(spec.files)
                 spec.files = [spec.files]
-            all_exist = true
 
             moduledir = path.resolve(dir, name)
             unless fs.existsSync(moduledir)
@@ -38,12 +46,8 @@ module.exports = (opts) ->
             for file in spec.files
                 file = path.resolve(dir, name, file)
                 file_list.push(file)
-                console.log file
-                unless fs.existsSync(file)
-                    all_exist = false
 
-            unless all_exist and opts.fastcheck
-                bowerspecs.push(name + "#" + spec.version)
+            bowerjson.dependencies[name] = spec.version
         return file_list
     deps = process_deps(opts.deps)
     testdeps = process_deps(opts.testdeps)
@@ -57,26 +61,30 @@ module.exports = (opts) ->
                 callback()
                 return
             )
-            if bowerspecs.length > 0
-                bower.commands.install(bowerspecs, {}, opts).on("log", (result) ->
-                    gutil.log [
-                        "bower"
-                        gutil.colors.cyan(result.id)
-                        result.message
-                    ].join(" ")
-                    return
-                ).on("error", (error) ->
-                    stream.emit "error", new gutil.PluginError("gulp-bower-deps", error)
-                    stream.end()
-                    return
-                ).on "end", ->
-                    stream.end()
-                    stream.emit "end"
-                    return
-            else
-                gutil.log "Bower: everything installed! nothing to do"
+            logger = new Logger()
+            logger.on "log", (log) ->
+                gutil.log [
+                    "Bower"
+                    gutil.colors.cyan(log.id)
+                    log.message
+                ].join(" ")
+            config = opts
+            options = {}
+            config = mout.object.deepFillIn(config || {}, defaultConfig)
+            options.save ?= config.defaultSave;
+            project = new Project(config, logger);
+            project._json = bowerjson
+            project._jsonFile = "bower.json"
+            project.saveJson = -> Q.resolve()
+            tracker = new Tracker(config);
+            decEndpoints = []
+            tracker.trackDecomposedEndpoints('install', decEndpoints)
+            project.install(decEndpoints, options, config).then (res) ->
                 stream.end()
                 stream.emit "end"
+            , (error) ->
+                stream.emit "error", new gutil.PluginError("gulp-bower-deps", error)
+                stream.end()
 
             stream
         return
