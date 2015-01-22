@@ -38,8 +38,6 @@
       opts.directory = opts.directory || "./bower_components";
     }
     dir = opts.directory;
-    gutil.log("Bower: Using cwd: ", opts.cwd || process.cwd());
-    gutil.log("Bower: Using bower dir: ", dir);
     bowerjson = {
       name: 'foo',
       dependencies: {}
@@ -81,6 +79,8 @@
         }
         gulp.task(taskname, [], function() {
           var config, decEndpoints, logger, options, project, stream, tracker;
+          gutil.log("Bower: Using cwd: ", opts.cwd || process.cwd());
+          gutil.log("Bower: Using bower dir: ", dir);
           stream = through.obj(function(file, enc, callback) {
             this.push(file);
             callback();

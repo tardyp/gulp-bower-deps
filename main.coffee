@@ -22,8 +22,6 @@ module.exports = (opts) ->
         opts.directory = opts.directory or "./bower_components"
 
     dir = opts.directory
-    gutil.log "Bower: Using cwd: ", opts.cwd or process.cwd()
-    gutil.log "Bower: Using bower dir: ", dir
 
     # generate bowerjson automatically
     bowerjson = {
@@ -53,9 +51,10 @@ module.exports = (opts) ->
     testdeps = process_deps(opts.testdeps)
     opts.interactive ?= false
 
-    installtask: (gulp, taskname) ->
-        taskname ?= "bower"
+    installtask: (gulp, taskname = "bower") ->
         gulp.task taskname, [], ->
+            gutil.log "Bower: Using cwd: ", opts.cwd or process.cwd()
+            gutil.log "Bower: Using bower dir: ", dir
             stream = through.obj((file, enc, callback) ->
                 @push file
                 callback()
