@@ -1,7 +1,11 @@
 (function() {
   var Logger, Project, Q, Tracker, defaultConfig, fs, gutil, mout, path, through;
 
-  Q = require("Q");
+  Q = require("q");
+
+  fs = require('fs');
+
+  path = require('path');
 
   Logger = require("bower-logger");
 
@@ -22,7 +26,7 @@
   mout = require('mout');
 
   module.exports = function(opts) {
-    var bower_config, bowerjson, bowerrc, deps, dir, process_deps, testdeps;
+    var bower_config, bowerjson, bowerrc, deps, dir, process_deps, summaryfile, testdeps;
     if (typeof opts === "string") {
       opts = {
         directory: opts
@@ -38,6 +42,7 @@
       opts.directory = opts.directory || "./bower_components";
     }
     dir = opts.directory;
+    summaryfile = path.join(dir, 'bowerdeps.js');
     bowerjson = {
       name: 'foo',
       dependencies: {}
@@ -68,6 +73,7 @@
       return file_list;
     };
     deps = process_deps(opts.deps);
+    deps.push(summaryfile);
     testdeps = process_deps(opts.testdeps);
     if (opts.interactive == null) {
       opts.interactive = false;
@@ -105,6 +111,29 @@
           decEndpoints = [];
           tracker.trackDecomposedEndpoints('install', decEndpoints);
           project.install(decEndpoints, options, config).then(function(res) {
+            var installed, k, stripPrivate, summary, v, _ref;
+            summary = "BOWERDEPS = (typeof BOWERDEPS === 'undefined') ? {}: BOWERDEPS;";
+            installed = project._manager._installed;
+            stripPrivate = function(a) {
+              var k, r, v;
+              r = {};
+              for (k in a) {
+                v = a[k];
+                if (k[0] !== '_') {
+                  r[k] = v;
+                }
+              }
+              return JSON.stringify(r);
+            };
+            _ref = opts.deps;
+            for (k in _ref) {
+              v = _ref[k];
+              if (installed.hasOwnProperty(k)) {
+                summary += "BOWERDEPS['" + k + "'] = ";
+                summary += "" + (stripPrivate(installed[k])) + ";";
+              }
+            }
+            fs.writeFileSync(summaryfile, summary);
             stream.end();
             return stream.emit("end");
           }, function(error) {

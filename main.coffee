@@ -1,8 +1,10 @@
 Q = require("q")
+fs = require('fs')
+path = require('path')
 Logger = require("bower-logger")
 Project = require("bower/lib/core/Project")
 Tracker = require("bower/lib/util/analytics").Tracker
-defaultConfig = require('bower/lib/config');
+defaultConfig = require('bower/lib/config')
 fs = require("fs")
 gutil = require("gulp-util")
 through = require("through2")
@@ -22,6 +24,7 @@ module.exports = (opts) ->
         opts.directory = opts.directory or "./bower_components"
 
     dir = opts.directory
+    summaryfile = path.join(dir, 'bowerdeps.js')
 
     # generate bowerjson automatically
     bowerjson = {
@@ -48,6 +51,7 @@ module.exports = (opts) ->
             bowerjson.dependencies[name] = spec.version
         return file_list
     deps = process_deps(opts.deps)
+    deps.push(summaryfile)
     testdeps = process_deps(opts.testdeps)
     opts.interactive ?= false
 
@@ -70,15 +74,28 @@ module.exports = (opts) ->
             config = opts
             options = {}
             config = mout.object.deepFillIn(config || {}, defaultConfig)
-            options.save ?= config.defaultSave;
-            project = new Project(config, logger);
+            options.save ?= config.defaultSave
+            project = new Project(config, logger)
             project._json = bowerjson
             project._jsonFile = "bower.json"
             project.saveJson = -> Q.resolve()
-            tracker = new Tracker(config);
+            tracker = new Tracker(config)
             decEndpoints = []
             tracker.trackDecomposedEndpoints('install', decEndpoints)
             project.install(decEndpoints, options, config).then (res) ->
+                summary = "BOWERDEPS = (typeof BOWERDEPS === 'undefined') ? {}: BOWERDEPS;"
+                installed = project._manager._installed
+                stripPrivate = (a) ->
+                    r = {}
+                    for k, v of a
+                        if k[0] != '_'
+                            r[k] = v
+                    return JSON.stringify(r)
+                for k, v of opts.deps
+                    if installed.hasOwnProperty(k)
+                        summary += "BOWERDEPS['#{k}'] = "
+                        summary += "#{stripPrivate(installed[k])};"
+                fs.writeFileSync(summaryfile, summary)
                 stream.end()
                 stream.emit "end"
             , (error) ->
