@@ -82,9 +82,12 @@ module.exports = (opts) ->
             tracker = new Tracker(config)
             decEndpoints = []
             tracker.trackDecomposedEndpoints('install', decEndpoints)
-            project.install(decEndpoints, options, config).then (res) ->
+            project.install(decEndpoints, options, config).then (installed) ->
                 summary = "BOWERDEPS = (typeof BOWERDEPS === 'undefined') ? {}: BOWERDEPS;"
-                installed = project._manager._installed
+                for k, v of project._manager._installed
+                    if v?
+                        installed[k] = {pkgMeta: v}
+                console.log installed
                 stripPrivate = (a) ->
                     r = {}
                     for k, v of a
@@ -93,8 +96,8 @@ module.exports = (opts) ->
                     return JSON.stringify(r)
                 for k, v of opts.deps
                     if installed.hasOwnProperty(k)
-                        summary += "BOWERDEPS['#{k}'] = "
-                        summary += "#{stripPrivate(installed[k])};"
+                        summary += "\nBOWERDEPS['#{k}'] = "
+                        summary += "#{stripPrivate(installed[k].pkgMeta)};"
                 fs.writeFileSync(summaryfile, summary)
                 stream.end()
                 stream.emit "end"

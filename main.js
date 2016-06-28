@@ -110,12 +110,21 @@
           tracker = new Tracker(config);
           decEndpoints = [];
           tracker.trackDecomposedEndpoints('install', decEndpoints);
-          project.install(decEndpoints, options, config).then(function(res) {
-            var installed, k, stripPrivate, summary, v, _ref;
+          project.install(decEndpoints, options, config).then(function(installed) {
+            var k, stripPrivate, summary, v, _ref, _ref1;
             summary = "BOWERDEPS = (typeof BOWERDEPS === 'undefined') ? {}: BOWERDEPS;";
-            installed = project._manager._installed;
+            _ref = project._manager._installed;
+            for (k in _ref) {
+              v = _ref[k];
+              if (v != null) {
+                installed[k] = {
+                  pkgMeta: v
+                };
+              }
+            }
+            console.log(installed);
             stripPrivate = function(a) {
-              var k, r, v;
+              var r;
               r = {};
               for (k in a) {
                 v = a[k];
@@ -125,12 +134,12 @@
               }
               return JSON.stringify(r);
             };
-            _ref = opts.deps;
-            for (k in _ref) {
-              v = _ref[k];
+            _ref1 = opts.deps;
+            for (k in _ref1) {
+              v = _ref1[k];
               if (installed.hasOwnProperty(k)) {
-                summary += "BOWERDEPS['" + k + "'] = ";
-                summary += "" + (stripPrivate(installed[k])) + ";";
+                summary += "\nBOWERDEPS['" + k + "'] = ";
+                summary += "" + (stripPrivate(installed[k].pkgMeta)) + ";";
               }
             }
             fs.writeFileSync(summaryfile, summary);
