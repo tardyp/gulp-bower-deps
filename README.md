@@ -69,6 +69,9 @@ https://github.com/zont/gulp-bower
 
 ### Changelog
 
+#### 0.3.0
+* Generate a bowerdeps.js, which contain the metadata for the dependencies embedded in the deps source files
+
 #### 0.2.0
 * Change installation method. We now fake a bower.json, instead of faking a bower install.
   With this method, bower does all checks correctly, and dont fail to upgrade packages
