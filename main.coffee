@@ -88,7 +88,6 @@ module.exports = (opts) ->
                 for k, v of project._manager._installed
                     if v?
                         installed[k] = {pkgMeta: v}
-                console.log installed
                 stripPrivate = (a) ->
                     r = {}
                     for k, v of a

@@ -123,7 +123,6 @@
                 };
               }
             }
-            console.log(installed);
             stripPrivate = function(a) {
               var r;
               r = {};
