@@ -69,6 +69,12 @@ https://github.com/zont/gulp-bower
 
 ### Changelog
 
+#### 0.3.2
+* Fix support for strict mode.
+
+#### 0.3.1
+* Fix an issue where bowerdeps only works on a second run.
+
 #### 0.3.0
 * Generate a bowerdeps.js, which contain the metadata for the dependencies embedded in the deps source files
 

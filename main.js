@@ -112,7 +112,8 @@
           tracker.trackDecomposedEndpoints('install', decEndpoints);
           project.install(decEndpoints, options, config).then(function(installed) {
             var k, stripPrivate, summary, v, _ref, _ref1;
-            summary = "BOWERDEPS = (typeof BOWERDEPS === 'undefined') ? {}: BOWERDEPS;";
+            summary = "(function(){ var _global = (0, eval)('this');\n";
+            summary += "if (typeof _global.BOWERDEPS === 'undefined') { _global.BOWERDEPS = {}; }\n";
             _ref = project._manager._installed;
             for (k in _ref) {
               v = _ref[k];
@@ -138,10 +139,11 @@
             for (k in _ref1) {
               v = _ref1[k];
               if (installed.hasOwnProperty(k)) {
-                summary += "\nBOWERDEPS['" + k + "'] = ";
+                summary += "\n_global.BOWERDEPS['" + k + "'] = ";
                 summary += "" + (stripPrivate(installed[k].pkgMeta)) + ";";
               }
             }
+            summary += "})();";
             fs.writeFileSync(summaryfile, summary);
             stream.end();
             return stream.emit("end");
