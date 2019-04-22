@@ -83,7 +83,8 @@ module.exports = (opts) ->
             decEndpoints = []
             tracker.trackDecomposedEndpoints('install', decEndpoints)
             project.install(decEndpoints, options, config).then (installed) ->
-                summary = "BOWERDEPS = (typeof BOWERDEPS === 'undefined') ? {}: BOWERDEPS;"
+                summary = "(function(){ var _global = (0, eval)('this');\n"
+                summary += "if (typeof _global.BOWERDEPS === 'undefined') { _global.BOWERDEPS = {}; }\n"
                 for k, v of project._manager._installed
                     if v?
                         installed[k] = {pkgMeta: v}
@@ -96,8 +97,9 @@ module.exports = (opts) ->
                     return JSON.stringify(r)
                 for k, v of opts.deps
                     if installed.hasOwnProperty(k)
-                        summary += "\nBOWERDEPS['#{k}'] = "
+                        summary += "\n_global.BOWERDEPS['#{k}'] = "
                         summary += "#{stripPrivate(installed[k].pkgMeta)};"
+                summary += "})();"
                 fs.writeFileSync(summaryfile, summary)
                 stream.end()
                 stream.emit "end"
